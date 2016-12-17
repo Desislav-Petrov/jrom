@@ -1,0 +1,16 @@
+- Eager/Lazy load
+- Id generation strategies
+- Compression
+- 1:1, 1:N, M:M
+- Serialisation strategies
+- 1stlevel/2nd level caching
+- overwrite only differences
+- trackable structures decorator
+- stateful session
+- different serialisation strategies
+- optimistic concurrency control
+- shared/sentiles/etc
+- parallel scan with strategy
+- custom serialisations for gson classes adapters
+- owned vs non-owned
+- support for list,map,set as externals
