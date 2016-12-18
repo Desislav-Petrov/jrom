@@ -5,6 +5,9 @@ import com.jrom.util.ExternalDomainClass;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -33,8 +36,16 @@ public class StatelessRedisSessionIntegrationWithExternalsTest extends Stateless
         currentSession.persist(domainClass);
         currentSession.commitTransaction();
 
-        Optional<SampleDomainClass> retrieved = currentSession.read(testid, SampleDomainClass.class);
+        Optional<SampleDomainClass> retrievedWithSingleId = currentSession.read(testid, SampleDomainClass.class);
+        Optional<List<SampleDomainClass>> retrievedWithListOfIds = currentSession.read(new HashSet<>(Arrays.asList(testid)), SampleDomainClass.class);
+        Optional<List<SampleDomainClass>> retrieveAllEntries = currentSession.read(SampleDomainClass.class);
 
-        Assert.assertNotNull(retrieved.get().getExternalDomainClassInstance());
+        Assert.assertNotNull(retrievedWithSingleId.get().getExternalDomainClassInstance());
+        Assert.assertNotNull(retrievedWithListOfIds.get().get(0).getExternalDomainClassInstance());
+        Assert.assertNotNull(retrieveAllEntries.get().get(0).getExternalDomainClassInstance());
+
+        Assert.assertEquals(domainClass, retrievedWithSingleId.get());
+        Assert.assertEquals(domainClass, retrievedWithListOfIds.get().get(0));
+        Assert.assertEquals(domainClass, retrieveAllEntries.get().get(0));
     }
 }

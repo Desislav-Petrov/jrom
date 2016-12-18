@@ -32,9 +32,10 @@ public class StatelessRedisSession implements Session {
     private final JedisPool pool;
     private final MetadataTable table;
 
+    final ScanParams scanParams;
+
     private Pipeline currentPipeline;
     private Jedis currentJedis;
-    final ScanParams scanParams;
 
     StatelessRedisSession(JedisPool pool, MetadataTable table) {
         this.pool = pool;
@@ -57,35 +58,6 @@ public class StatelessRedisSession implements Session {
         } catch (Exception ex) {
             LOGGER.error("Error while writing class [{}] to redis: ", className, ex);
             throw new JROMCRUDException("Error while writing class: " + className, ex);
-        }
-    }
-
-    <T> void writeExternals(T object, String fieldName, MetadataTableEntry.ExternalMetadataTableEntry entry,
-                            TranslationStrategy translationStrategy) {
-        LOGGER.info("Persisting external object from field [{}]", fieldName);
-        Object externalObject = null;
-        try {
-            externalObject = PropertyUtils.getProperty(object, fieldName);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            LOGGER.error("Unable use external field setter for [{}]", fieldName, e);
-            throw new JROMCRUDException(
-                    "Error when calling a getter for external field: " + fieldName + " on object of type: " + object.getClass(), e);
-        }
-
-        // Instance member might be null (not set)
-        if (externalObject != null) {
-            String objectId;
-            try {
-                objectId = String.valueOf(externalObject.getClass().getMethod(entry.getIdRetrievalMethod()).invoke(externalObject));
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                LOGGER.error("Unable to retrieve id fo external object from field [{}]", fieldName, e);
-                throw new JROMCRUDException(
-                        "Error when retrieving id of external object of type: " + object.getClass(), e);
-            }
-
-            Map<String, String> idWithValues = new HashMap<>();
-            idWithValues.put(objectId, translationStrategy.serialiseStandalone(externalObject));
-            currentPipeline.hmset(entry.getNamespace(), idWithValues);
         }
     }
 
@@ -114,23 +86,8 @@ public class StatelessRedisSession implements Session {
             if (deserialisedObject.isPresent()) {
                 T object = deserialisedObject.get().getLeft();
                 List<TranslationStrategy.ExternalEntry> externalEntries = deserialisedObject.get().getRight();
-
                 if (externalEntries != null && !externalEntries.isEmpty()) {
-                    externalEntries.forEach(e -> {
-                        String externalObjectId = e.getId();
-                        String fieldName = e.getFieldName();
-                        MetadataTableEntry.ExternalMetadataTableEntry externalFieldMetadata = entry.getExternalEntries().get(fieldName);
-                        String externalObjectAsString = jedis.hget(externalFieldMetadata.getNamespace(), externalObjectId);
-                        Object externalObject = entry.getTranslationStrategy().deserialiseStandalone(
-                                externalObjectAsString, externalFieldMetadata.getClassType());
-                        try {
-                            Method descriptor = new PropertyDescriptor(fieldName, classType).getWriteMethod();
-                            descriptor.invoke(object, externalObject);
-                        } catch (IntrospectionException | InvocationTargetException | IllegalAccessException ex) {
-                            LOGGER.error("No setter method for external property [{}] found", fieldName, ex);
-                            throw new JROMCRUDException("Unable to find setter: " + fieldName + " for external object", ex);
-                        }
-                    });
+                    readExternals(jedis, object, externalEntries);
                 }
                 return Optional.of(object);
             } else {
@@ -141,6 +98,25 @@ public class StatelessRedisSession implements Session {
             throw new JROMCRUDException(
                     "Exception while retrieving id: " + id + " from class: " + name, ex);
         }
+    }
+
+    private <T> void readExternals(Jedis jedis, T object, List<TranslationStrategy.ExternalEntry> externalEntries) {
+        externalEntries.forEach(e -> {
+            MetadataTableEntry entry = verifyEntry(object);
+            String externalObjectId = e.getId();
+            String fieldName = e.getFieldName();
+            MetadataTableEntry.ExternalMetadataTableEntry externalFieldMetadata = entry.getExternalEntries().get(fieldName);
+            String externalObjectAsString = jedis.hget(externalFieldMetadata.getNamespace(), externalObjectId);
+            Object externalObject = entry.getTranslationStrategy().deserialiseStandalone(
+                    externalObjectAsString, externalFieldMetadata.getClassType());
+            try {
+                Method descriptor = new PropertyDescriptor(fieldName, object.getClass()).getWriteMethod();
+                descriptor.invoke(object, externalObject);
+            } catch (IntrospectionException | InvocationTargetException | IllegalAccessException ex) {
+                LOGGER.error("No setter method for external property [{}] found", fieldName, ex);
+                throw new JROMCRUDException("Unable to find setter: " + fieldName + " for external object", ex);
+            }
+        });
     }
 
     @Override
@@ -163,8 +139,12 @@ public class StatelessRedisSession implements Session {
                         .map(e -> entry.getTranslationStrategy().deserialise(e.getValue(), classType))
                         .filter(Optional::isPresent)
                         .map(Optional::get)
-                        .map(Pair::getLeft)
-                        .forEach(entries::add);
+                        .forEach( e -> {
+                            entries.add(e.getKey());
+                            if (e.getValue() != null && !e.getValue().isEmpty()) {
+                                readExternals(jedis, e.getKey(), e.getValue());
+                            }
+                        });
 
                 if (scanResult.getStringCursor().equals(ScanParams.SCAN_POINTER_START)) {
                     //the whole hash is traversed so we can break out
@@ -275,5 +255,34 @@ public class StatelessRedisSession implements Session {
             throw new JROMCRUDException("Null object");
         }
         return verifyEntry(object.getClass());
+    }
+
+    private <T> void writeExternals(T object, String fieldName, MetadataTableEntry.ExternalMetadataTableEntry entry,
+                                    TranslationStrategy translationStrategy) {
+        LOGGER.info("Persisting external object from field [{}]", fieldName);
+        Object externalObject = null;
+        try {
+            externalObject = PropertyUtils.getProperty(object, fieldName);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            LOGGER.error("Unable use external field setter for [{}]", fieldName, e);
+            throw new JROMCRUDException(
+                    "Error when calling a getter for external field: " + fieldName + " on object of type: " + object.getClass(), e);
+        }
+
+        // Instance member might be null (not set)
+        if (externalObject != null) {
+            String objectId;
+            try {
+                objectId = String.valueOf(externalObject.getClass().getMethod(entry.getIdRetrievalMethod()).invoke(externalObject));
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                LOGGER.error("Unable to retrieve id fo external object from field [{}]", fieldName, e);
+                throw new JROMCRUDException(
+                        "Error when retrieving id of external object of type: " + object.getClass(), e);
+            }
+
+            Map<String, String> idWithValues = new HashMap<>();
+            idWithValues.put(objectId, translationStrategy.serialiseStandalone(externalObject));
+            currentPipeline.hmset(entry.getNamespace(), idWithValues);
+        }
     }
 }
