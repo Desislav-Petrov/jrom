@@ -111,7 +111,7 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
                             Standalone standaloneAnnotation = e.getAnnotation(Standalone.class);
                             String externalNamespace = standaloneAnnotation.externalNamespace();
                             String idMethodName = standaloneAnnotation.idMethodProvider();
-                            return new MetadataTableEntry.ExternalMetadataTableEntry(e.getType(), externalNamespace, idMethodName);
+                            return MetadataTableEntry.externalOf(e.getType(), externalNamespace, idMethodName);
                         }));
 
         return externalEntries;
@@ -210,6 +210,7 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
                 @Override
                 public void write(JsonWriter out, Object value) throws IOException {
                     out.beginObject();
+                    //TODO stop being dependent on that: it's there anyway
                     out.name(EXTERNAL_OBJECT_FIELD_NAME).value(k);
                     try {
                         if (value != null) {

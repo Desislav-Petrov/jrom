@@ -6,7 +6,6 @@ import com.jrom.api.exception.JROMCRUDException;
 import com.jrom.api.exception.JROMTransactionException;
 import com.jrom.api.metadata.MetadataTable;
 import com.jrom.impl.metadata.MetadataTableEntry;
-import com.jrom.util.ExternalDomainClass;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -85,7 +84,7 @@ public class StatelessRedisSession implements Session {
             }
 
             Map<String, String> idWithValues = new HashMap<>();
-            idWithValues.put(objectId, translationStrategy.serialise(externalObject));
+            idWithValues.put(objectId, translationStrategy.serialiseExternal(externalObject));
             currentPipeline.hmset(entry.getNamespace(), idWithValues);
         }
     }
@@ -123,8 +122,9 @@ public class StatelessRedisSession implements Session {
 
                         MetadataTableEntry.ExternalMetadataTableEntry externalFieldMetadata = entry.getExternalEntries().get(fieldName);
                         String externalObjectAsString = jedis.hget(externalFieldMetadata.getNamespace(), externalObjectId);
-//                    Object externalObject = entry.getTranslationStrategy().deserialise(externalObjectAsString, externalFieldMetadata.getClassType());
-                        Object externalObject = new ExternalDomainClass();
+                        Object externalObject = entry.getTranslationStrategy()
+                            .deserialise(externalObjectAsString, externalFieldMetadata.getClassType());
+//                        Object externalObject = new ExternalDomainClass();
                         try {
                             Method descriptor = new PropertyDescriptor("externalDomainClassInstance", classType).getWriteMethod();
                             descriptor.invoke(object, externalObject);
