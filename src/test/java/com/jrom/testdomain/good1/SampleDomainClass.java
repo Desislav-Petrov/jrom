@@ -58,17 +58,19 @@ public class SampleDomainClass {
         SampleDomainClass that = (SampleDomainClass) o;
 
         if (!id.equals(that.id)) return false;
-        if (!someStringValue.equals(that.someStringValue)) return false;
-        if (!someIntValue.equals(that.someIntValue)) return false;
-        return someDoubleValue.equals(that.someDoubleValue);
+        if (someStringValue != null ? !someStringValue.equals(that.someStringValue) : that.someStringValue != null)
+            return false;
+        if (someIntValue != null ? !someIntValue.equals(that.someIntValue) : that.someIntValue != null) return false;
+        return someDoubleValue != null ? someDoubleValue.equals(that.someDoubleValue) : that.someDoubleValue == null;
+
     }
 
     @Override
     public int hashCode() {
         int result = id.hashCode();
-        result = 31 * result + someStringValue.hashCode();
-        result = 31 * result + someIntValue.hashCode();
-        result = 31 * result + someDoubleValue.hashCode();
+        result = 31 * result + (someStringValue != null ? someStringValue.hashCode() : 0);
+        result = 31 * result + (someIntValue != null ? someIntValue.hashCode() : 0);
+        result = 31 * result + (someDoubleValue != null ? someDoubleValue.hashCode() : 0);
         return result;
     }
 }

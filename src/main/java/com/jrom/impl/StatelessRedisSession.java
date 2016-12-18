@@ -73,18 +73,21 @@ public class StatelessRedisSession implements Session {
                     "Error when calling a getter for external field: " + fieldName + " on object of type: " + object.getClass(), e);
         }
 
-        String objectId = null;
-        try {
-            objectId = String.valueOf(externalObject.getClass().getMethod(entry.getIdRetrievalMethod()).invoke(externalObject));
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            LOGGER.error("Unable to retrieve id fo external object from field [{}]", fieldName, e);
-            throw new JROMCRUDException(
-                    "Error when retrieving id of external object of type: " + object.getClass(), e);
-        }
+        // Instance member might be null (not set)
+        if (externalObject != null) {
+            String objectId;
+            try {
+                objectId = String.valueOf(externalObject.getClass().getMethod(entry.getIdRetrievalMethod()).invoke(externalObject));
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                LOGGER.error("Unable to retrieve id fo external object from field [{}]", fieldName, e);
+                throw new JROMCRUDException(
+                        "Error when retrieving id of external object of type: " + object.getClass(), e);
+            }
 
-        Map<String, String> idWithValues = new HashMap<>();
-        idWithValues.put(objectId, translationStrategy.serialise(externalObject));
-        currentPipeline.hmset(entry.getNamespace(), idWithValues);
+            Map<String, String> idWithValues = new HashMap<>();
+            idWithValues.put(objectId, translationStrategy.serialise(externalObject));
+            currentPipeline.hmset(entry.getNamespace(), idWithValues);
+        }
     }
 
     @Override

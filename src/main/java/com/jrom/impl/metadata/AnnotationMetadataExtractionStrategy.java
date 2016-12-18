@@ -212,8 +212,12 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
                     out.beginObject();
                     out.name(EXTERNAL_OBJECT_FIELD_NAME).value(k);
                     try {
-                        String id = String.valueOf(value.getClass().getMethod(v.idRetrievalMethod).invoke(value));
-                        out.name(EXTERNAL_OBJECT_ID).value(id);
+                        if (value != null) {
+                            String id = String.valueOf(value.getClass().getMethod(v.idRetrievalMethod).invoke(value));
+                            out.name(EXTERNAL_OBJECT_ID).value(id);
+                        } else {
+                            out.name(EXTERNAL_OBJECT_ID).value(JSONTranslationStrategy.NULL_EXTERNAL_OBJECT_ID);
+                        }
                     } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                         throw new JROMCRUDException("Unable to serialise/deserialise as no method: " + v.idRetrievalMethod
                                 + " on object of type: " + v.getClass(), e);

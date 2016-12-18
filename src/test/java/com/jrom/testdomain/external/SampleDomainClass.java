@@ -18,6 +18,8 @@ public class SampleDomainClass {
     private Double someDoubleValue;
     @Standalone(externalNamespace = "externalDomainClass", idMethodProvider = "getExternalTestVariable")
     private ExternalDomainClass externalDomainClassInstance;
+    @Standalone(externalNamespace = "externalDomainClassSecond", idMethodProvider = "getExternalTestVariable")
+    private ExternalDomainClass externalDomainClassInstanceSecond;
 
     public SampleDomainClass() {
     }
@@ -60,6 +62,14 @@ public class SampleDomainClass {
 
     public void setExternalDomainClassInstance(ExternalDomainClass externalDomainClassInstance) {
         this.externalDomainClassInstance = externalDomainClassInstance;
+    }
+
+    public ExternalDomainClass getExternalDomainClassInstanceSecond() {
+        return externalDomainClassInstanceSecond;
+    }
+
+    public void setExternalDomainClassInstanceSecond(ExternalDomainClass externalDomainClassInstanceSecond) {
+        this.externalDomainClassInstanceSecond = externalDomainClassInstanceSecond;
     }
 
     @Override

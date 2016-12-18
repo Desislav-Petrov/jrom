@@ -21,6 +21,8 @@ import java.util.regex.Pattern;
  * @author des
  */
 public class JSONTranslationStrategy implements TranslationStrategy {
+    public static final String NULL_EXTERNAL_OBJECT_ID = "null";
+
     private static final Logger LOG = LoggerFactory.getLogger(JSONTranslationStrategy.class);
     private static final Pattern STANDALONE_ATTRIBUTE = Pattern.compile("\\{\"fieldName[\\S&&[^\\}]]+\\}{1}");
     private final Gson gson;
@@ -51,9 +53,12 @@ public class JSONTranslationStrategy implements TranslationStrategy {
             String entry = standaloneMatches.group();
             JsonObject jsonObject = gson.fromJson(entry, JsonObject.class);
             LOG.info("Standalone entry [{}] for class [{}]", entry, classTypeAsString);
-            externalEntries.add(new ExternalEntry(
-                    jsonObject.get("id").getAsString(),
-                    jsonObject.get("fieldName").getAsString()));
+            // Handles null/unset objects
+            if (!NULL_EXTERNAL_OBJECT_ID.equals(jsonObject.get("id").getAsString())) {
+                externalEntries.add(new ExternalEntry(
+                        jsonObject.get("id").getAsString(),
+                        jsonObject.get("fieldName").getAsString()));
+            }
         }
 
         return Optional.of(new ImmutablePair<>(gson.fromJson(objectString, classType), externalEntries));
