@@ -57,7 +57,7 @@ public interface TranslationStrategy {
     /**
      * Encapsulates an external entry
      */
-    public static class ExternalEntry {
+    class ExternalEntry {
         private final String id;
         private final String fieldName;
 

@@ -113,8 +113,8 @@ public class StatelessRedisSession implements Session {
             Optional<Pair<T, List<TranslationStrategy.ExternalEntry>>> deserialisedObject = entry.getTranslationStrategy().deserialise(serialisedObject, classType);
             if (deserialisedObject.isPresent()) {
                 T object = deserialisedObject.get().getLeft();
-
                 List<TranslationStrategy.ExternalEntry> externalEntries = deserialisedObject.get().getRight();
+
                 if (externalEntries != null && !externalEntries.isEmpty()) {
                     externalEntries.forEach(e -> {
                         String externalObjectId = e.getId();
@@ -124,10 +124,11 @@ public class StatelessRedisSession implements Session {
                         Object externalObject = entry.getTranslationStrategy().deserialiseStandalone(
                                 externalObjectAsString, externalFieldMetadata.getClassType());
                         try {
-                            Method descriptor = new PropertyDescriptor("externalDomainClassInstance", classType).getWriteMethod();
+                            Method descriptor = new PropertyDescriptor(fieldName, classType).getWriteMethod();
                             descriptor.invoke(object, externalObject);
-                        } catch (IntrospectionException | InvocationTargetException | IllegalAccessException e1) {
-                            e1.printStackTrace();
+                        } catch (IntrospectionException | InvocationTargetException | IllegalAccessException ex) {
+                            LOGGER.error("No setter method for external property [{}] found", fieldName, ex);
+                            throw new JROMCRUDException("Unable to find setter: " + fieldName + " for external object", ex);
                         }
                     });
                 }
