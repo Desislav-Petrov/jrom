@@ -44,7 +44,7 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
     private static final Logger LOGGER = LoggerFactory.getLogger(AnnotationMetadataExtractionStrategy.class);
 
     private static final String EXTERNAL_OBJECT_FIELD_NAME = "fieldName";
-    private static final String EXTERNAL_OBJECT_ID = "id";
+    public static final String EXTERNAL_OBJECT_ID = "jromExternalObjectId";
 
     public AnnotationMetadataExtractionStrategy() {
         //empty
@@ -211,7 +211,7 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
                 public void write(JsonWriter out, Object value) throws IOException {
                     out.beginObject();
                     //TODO stop being dependent on that: it's there anyway
-                    out.name(EXTERNAL_OBJECT_FIELD_NAME).value(k);
+//                    out.name(EXTERNAL_OBJECT_FIELD_NAME).value(k);
                     try {
                         if (value != null) {
                             String id = String.valueOf(value.getClass().getMethod(v.idRetrievalMethod).invoke(value));

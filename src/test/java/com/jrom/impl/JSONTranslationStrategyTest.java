@@ -56,7 +56,7 @@ public class JSONTranslationStrategyTest {
     public void deserialiseWithOneExternalTest() {
         com.jrom.testdomain.external.SampleDomainClass sampleWithExternal = getSampleDomainClassWithSingleExternal();
 
-        String json = "{\"id\":\"testid\",\"externalDomainClassInstance\":{\"fieldName\":\"externalDomainClassInstance\",\"id\":\"testexternal\"}}";
+        String json = "{\"id\":\"testid\",\"externalDomainClassInstance\":{\"jromExternalObjectId\":\"testexternal\"}}";
         Optional<Pair<com.jrom.testdomain.external.SampleDomainClass, List<TranslationStrategy.ExternalEntry>>> actual =
                 translationStrategy.deserialise(json, com.jrom.testdomain.external.SampleDomainClass.class);
         Assert.assertTrue(actual.isPresent());
@@ -75,7 +75,7 @@ public class JSONTranslationStrategyTest {
         externalMember.setExternalTestVariable("testexternalsecond");
         sampleWithExternal.setExternalDomainClassInstanceSecond(externalMember);
 
-        String json = "{\"id\":\"testid\",\"externalDomainClassInstance\":{\"fieldName\":\"externalDomainClassInstance\",\"id\":\"testexternal\"}, \"externalDomainClassInstanceSecond\":{\"fieldName\":\"externalDomainClassInstanceSecond\",\"id\":\"testexternalsecond\"}}";
+        String json = "{\"id\":\"testid\",\"externalDomainClassInstance\":{\"jromExternalObjectId\":\"testexternal\"}, \"externalDomainClassInstanceSecond\":{\"jromExternalObjectId\":\"testexternalsecond\"}}";
         Optional<Pair<com.jrom.testdomain.external.SampleDomainClass, List<TranslationStrategy.ExternalEntry>>> actual =
                 translationStrategy.deserialise(json, com.jrom.testdomain.external.SampleDomainClass.class);
         Assert.assertTrue(actual.isPresent());

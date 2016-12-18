@@ -26,6 +26,25 @@ public interface TranslationStrategy {
     String serialise(Object object);
 
     /**
+     * Deserialises a standalone object
+     *
+     * @param externalObjectAsString
+     * @param classType
+     * @param <T>
+     * @return
+     */
+    <T> T deserialiseStandalone(String externalObjectAsString, Class<T> classType);
+
+    /**
+     * Serialises a standalone object
+     *
+     * @param object
+     * @param <T>
+     * @return
+     */
+    <T> String serialiseStandalone(T object);
+
+    /**
      * Retrieve an object from string
      *
      * @param <T>

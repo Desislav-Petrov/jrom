@@ -84,7 +84,7 @@ public class StatelessRedisSession implements Session {
             }
 
             Map<String, String> idWithValues = new HashMap<>();
-            idWithValues.put(objectId, translationStrategy.serialiseExternal(externalObject));
+            idWithValues.put(objectId, translationStrategy.serialiseStandalone(externalObject));
             currentPipeline.hmset(entry.getNamespace(), idWithValues);
         }
     }
@@ -119,12 +119,10 @@ public class StatelessRedisSession implements Session {
                     externalEntries.forEach(e -> {
                         String externalObjectId = e.getId();
                         String fieldName = e.getFieldName();
-
                         MetadataTableEntry.ExternalMetadataTableEntry externalFieldMetadata = entry.getExternalEntries().get(fieldName);
                         String externalObjectAsString = jedis.hget(externalFieldMetadata.getNamespace(), externalObjectId);
-                        Object externalObject = entry.getTranslationStrategy()
-                            .deserialise(externalObjectAsString, externalFieldMetadata.getClassType());
-//                        Object externalObject = new ExternalDomainClass();
+                        Object externalObject = entry.getTranslationStrategy().deserialiseStandalone(
+                                externalObjectAsString, externalFieldMetadata.getClassType());
                         try {
                             Method descriptor = new PropertyDescriptor("externalDomainClassInstance", classType).getWriteMethod();
                             descriptor.invoke(object, externalObject);

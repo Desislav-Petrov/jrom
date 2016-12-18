@@ -51,11 +51,11 @@ public class MetadataTableEntry {
     }
 
     public static class ExternalMetadataTableEntry {
-        Class<?> classType;
-        String namespace;
-        String idRetrievalMethod;
+        final Class<?> classType;
+        final String namespace;
+        final String idRetrievalMethod;
 
-        public ExternalMetadataTableEntry(Class<?> classType, String namespace, String idRetrievalMethod) {
+        private ExternalMetadataTableEntry(Class<?> classType, String namespace, String idRetrievalMethod) {
             this.classType = classType;
             this.namespace = namespace;
             this.idRetrievalMethod = idRetrievalMethod;
@@ -78,5 +78,9 @@ public class MetadataTableEntry {
     static MetadataTableEntry of(String namespace, Function<Object, String> idExtractor, JSONTranslationStrategy translationStrategy,
                                  Map<String, ExternalMetadataTableEntry> externalEntries) {
         return new MetadataTableEntry(namespace, idExtractor, translationStrategy, externalEntries);
+    }
+
+    static ExternalMetadataTableEntry externalOf(Class<?> classType, String namespace, String idRetrievalMethod) {
+        return new ExternalMetadataTableEntry(classType, namespace, idRetrievalMethod);
     }
 }
