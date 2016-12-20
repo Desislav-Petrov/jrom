@@ -16,4 +16,19 @@ public class ExternalDomainClass {
     public void setExternalTestVariable(String externalTestVariable) {
         this.externalTestVariable = externalTestVariable;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ExternalDomainClass that = (ExternalDomainClass) o;
+
+        return externalTestVariable != null ? externalTestVariable.equals(that.externalTestVariable) : that.externalTestVariable == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return externalTestVariable != null ? externalTestVariable.hashCode() : 0;
+    }
 }

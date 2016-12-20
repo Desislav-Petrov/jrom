@@ -53,15 +53,21 @@ public class JSONTranslationStrategyTest {
     }
 
     @Test
-    public void deserialiseWithOneExternalTest() {
+    public void deserialiseWithOneStandaloneTest() {
         com.jrom.testdomain.external.SampleDomainClass sampleWithExternal = getSampleDomainClassWithSingleExternal();
 
         String json = "{\"id\":\"testid\",\"externalDomainClassInstance\":{\"jromExternalObjectId\":\"testexternal\"}}";
         Optional<Pair<com.jrom.testdomain.external.SampleDomainClass, List<TranslationStrategy.ExternalEntry>>> actual =
                 translationStrategy.deserialise(json, com.jrom.testdomain.external.SampleDomainClass.class);
+
+        clearStandalones(actual.get().getKey());
+        clearStandalones(sampleWithExternal);
+
         Assert.assertTrue(actual.isPresent());
         Assert.assertEquals(sampleWithExternal, actual.get().getKey());
         Assert.assertEquals(1, actual.get().getValue().size());
+        Assert.assertEquals("externalDomainClassInstance", actual.get().getValue().get(0).getFieldName());
+        Assert.assertEquals("testexternal", actual.get().getValue().get(0).getId());
 
         List<TranslationStrategy.ExternalEntry> externalList = actual.get().getValue();
         Assert.assertEquals("testexternal", externalList.get(0).getId());
@@ -69,7 +75,7 @@ public class JSONTranslationStrategyTest {
     }
 
     @Test
-    public void deserialiseWithNExternalsTest() {
+    public void deserialiseWithNStandalonesTest() {
         com.jrom.testdomain.external.SampleDomainClass sampleWithExternal = getSampleDomainClassWithSingleExternal();
         ExternalDomainClass externalMember = new ExternalDomainClass();
         externalMember.setExternalTestVariable("testexternalsecond");
@@ -78,6 +84,10 @@ public class JSONTranslationStrategyTest {
         String json = "{\"id\":\"testid\",\"externalDomainClassInstance\":{\"jromExternalObjectId\":\"testexternal\"}, \"externalDomainClassInstanceSecond\":{\"jromExternalObjectId\":\"testexternalsecond\"}}";
         Optional<Pair<com.jrom.testdomain.external.SampleDomainClass, List<TranslationStrategy.ExternalEntry>>> actual =
                 translationStrategy.deserialise(json, com.jrom.testdomain.external.SampleDomainClass.class);
+
+        clearStandalones(actual.get().getKey());
+        clearStandalones(sampleWithExternal);
+
         Assert.assertTrue(actual.isPresent());
         Assert.assertEquals(sampleWithExternal, actual.get().getKey());
         Assert.assertEquals(2, actual.get().getValue().size());
@@ -87,6 +97,12 @@ public class JSONTranslationStrategyTest {
         Assert.assertEquals("externalDomainClassInstance", externalList.get(0).getFieldName());
         Assert.assertEquals("testexternalsecond", externalList.get(1).getId());
         Assert.assertEquals("externalDomainClassInstanceSecond", externalList.get(1).getFieldName());
+    }
+
+    private void clearStandalones(com.jrom.testdomain.external.SampleDomainClass sampleWithExternal) {
+        //exclude externals as these are translated separately and will cause the equals to fail
+        sampleWithExternal.setExternalDomainClassInstanceSecond(null);
+        sampleWithExternal.setExternalDomainClassInstance(null);
     }
 
     private com.jrom.testdomain.external.SampleDomainClass getSampleDomainClassWithSingleExternal() {

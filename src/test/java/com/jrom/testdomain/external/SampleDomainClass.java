@@ -79,13 +79,25 @@ public class SampleDomainClass {
 
         SampleDomainClass that = (SampleDomainClass) o;
 
-        return id.equals(that.id);
-
+        if (!id.equals(that.id)) return false;
+        if (someStringValue != null ? !someStringValue.equals(that.someStringValue) : that.someStringValue != null)
+            return false;
+        if (someIntValue != null ? !someIntValue.equals(that.someIntValue) : that.someIntValue != null) return false;
+        if (someDoubleValue != null ? !someDoubleValue.equals(that.someDoubleValue) : that.someDoubleValue != null)
+            return false;
+        if (externalDomainClassInstance != null ? !externalDomainClassInstance.equals(that.externalDomainClassInstance) : that.externalDomainClassInstance != null)
+            return false;
+        return externalDomainClassInstanceSecond != null ? externalDomainClassInstanceSecond.equals(that.externalDomainClassInstanceSecond) : that.externalDomainClassInstanceSecond == null;
     }
 
     @Override
     public int hashCode() {
         int result = id.hashCode();
+        result = 31 * result + (someStringValue != null ? someStringValue.hashCode() : 0);
+        result = 31 * result + (someIntValue != null ? someIntValue.hashCode() : 0);
+        result = 31 * result + (someDoubleValue != null ? someDoubleValue.hashCode() : 0);
+        result = 31 * result + (externalDomainClassInstance != null ? externalDomainClassInstance.hashCode() : 0);
+        result = 31 * result + (externalDomainClassInstanceSecond != null ? externalDomainClassInstanceSecond.hashCode() : 0);
         return result;
     }
 }
