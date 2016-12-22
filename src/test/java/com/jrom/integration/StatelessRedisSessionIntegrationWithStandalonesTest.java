@@ -5,10 +5,7 @@ import com.jrom.util.ExternalDomainClass;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Created by des on 12/10/16.
@@ -50,7 +47,7 @@ public class StatelessRedisSessionIntegrationWithStandalonesTest extends Statele
     }
 
     @Test
-    public void persistAndReadTwoExternals() {
+    public void persistAndReadTwoStandalones() {
         SampleDomainClass domainClass = new SampleDomainClass();
         domainClass.setSomeIntValue(0);
         final String testid = "testid";
@@ -68,7 +65,7 @@ public class StatelessRedisSessionIntegrationWithStandalonesTest extends Statele
         currentSession.commitTransaction();
 
         Optional<SampleDomainClass> retrievedWithSingleId = currentSession.read(testid, SampleDomainClass.class);
-        Optional<List<SampleDomainClass>> retrievedWithListOfIds = currentSession.read(new HashSet<>(Arrays.asList(testid)), SampleDomainClass.class);
+        Optional<List<SampleDomainClass>> retrievedWithListOfIds = currentSession.read(new HashSet<>(Collections.singletonList(testid)), SampleDomainClass.class);
         Optional<List<SampleDomainClass>> retrieveAllEntries = currentSession.read(SampleDomainClass.class);
 
         Assert.assertNotNull(retrievedWithSingleId.get().getExternalDomainClassInstance());
@@ -79,5 +76,4 @@ public class StatelessRedisSessionIntegrationWithStandalonesTest extends Statele
         Assert.assertEquals(domainClass, retrievedWithListOfIds.get().get(0));
         Assert.assertEquals(domainClass, retrieveAllEntries.get().get(0));
     }
-
 }
