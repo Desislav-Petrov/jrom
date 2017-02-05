@@ -3,16 +3,15 @@ package com.jrom.impl.metadata;
 import com.jrom.api.exception.JROMException;
 import com.jrom.api.exception.JROMMetadataException;
 import com.jrom.testdomain.broken1.MissingGetterSampleDomainClass;
-import com.jrom.testdomain.good1.SampleDomainClass;
-import com.jrom.testdomain.good1.SampleDomainClassWithMethodId;
-import com.jrom.testdomain.good1.SampleDomainSubclass;
-import com.jrom.testdomain.good1.SampleDomainSubclassWithMethodId;
+import com.jrom.testdomain.good1.*;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
 import java.util.Map;
+
+import static com.jrom.impl.metadata.MetadataTableEntry.ExternalMetadataTableEntry.ExternalType;
 
 
 /**
@@ -21,7 +20,7 @@ import java.util.Map;
 public class AnnotationMetadataExtractionStrategyTest {
     private AnnotationMetadataExtractionStrategy extractionStrategy;
 
-    private static final int NUMBER_OF_CLASSES_IN_PACKAGE = 5;
+    private static final int NUMBER_OF_CLASSES_IN_PACKAGE = 6;
     private Map<Class<?>, MetadataTableEntry> metadata;
 
     @Before
@@ -109,5 +108,14 @@ public class AnnotationMetadataExtractionStrategyTest {
         Assert.assertEquals("someId", entry.getIdExtractor().apply(sample));
     }
 
-    //externals get adapter
+    @Test
+    public void externalOfTypeSetPresentTest() {
+        Assert.assertEquals(NUMBER_OF_CLASSES_IN_PACKAGE, metadata.size());
+        MetadataTableEntry entry = metadata.get(SampleClassWithExternalSet.class);
+
+        Assert.assertEquals(3, entry.getExternalEntries().size());
+        Assert.assertEquals(ExternalType.SET, entry.getExternalEntries().get("setValues").getType());
+        Assert.assertEquals(ExternalType.MAP, entry.getExternalEntries().get("mapValues").getType());
+        Assert.assertEquals(ExternalType.LIST, entry.getExternalEntries().get("listValues").getType());
+    }
 }

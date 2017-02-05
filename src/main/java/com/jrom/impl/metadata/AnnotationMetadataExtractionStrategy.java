@@ -26,14 +26,14 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.jrom.impl.metadata.MetadataTableEntry.ExternalMetadataTableEntry.ExternalType;
+import static com.jrom.impl.metadata.MetadataTableEntry.externalOf;
 
 /**
  * Metadata extraction from annotations
@@ -111,7 +111,20 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
                             Standalone standaloneAnnotation = e.getAnnotation(Standalone.class);
                             String externalNamespace = standaloneAnnotation.externalNamespace();
                             String idMethodName = standaloneAnnotation.idMethodProvider();
-                            return MetadataTableEntry.externalOf(e.getType(), externalNamespace, idMethodName);
+                            ExternalType type;
+
+                            Class<?> fieldClass = e.getType();
+                            if (Map.class.isAssignableFrom(fieldClass)) {
+                                type = ExternalType.MAP;
+                            } else if (fieldClass.isAssignableFrom(List.class)) {
+                                type = ExternalType.LIST;
+                            } else if (Set.class.isAssignableFrom(fieldClass)) {
+                                type = ExternalType.SET;
+                            } else {
+                                type = ExternalType.SIMPLE;
+                            }
+
+                            return externalOf(e.getType(), externalNamespace, idMethodName, type);
                         }));
 
         return externalEntries;

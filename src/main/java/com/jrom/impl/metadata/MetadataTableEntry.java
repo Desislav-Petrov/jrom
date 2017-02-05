@@ -54,11 +54,17 @@ public class MetadataTableEntry {
         final Class<?> classType;
         final String namespace;
         final String idRetrievalMethod;
+        final ExternalType type;
 
-        private ExternalMetadataTableEntry(Class<?> classType, String namespace, String idRetrievalMethod) {
+        public enum ExternalType {
+            SIMPLE, SET, MAP, LIST
+        }
+
+        private ExternalMetadataTableEntry(Class<?> classType, String namespace, String idRetrievalMethod, ExternalType type) {
             this.classType = classType;
             this.namespace = namespace;
             this.idRetrievalMethod = idRetrievalMethod;
+            this.type = type;
         }
 
         public Class<?> getClassType() {
@@ -72,6 +78,10 @@ public class MetadataTableEntry {
         public String getIdRetrievalMethod() {
             return idRetrievalMethod;
         }
+
+        public ExternalType getType() {
+            return type;
+        }
     }
 
     //static creators
@@ -80,7 +90,8 @@ public class MetadataTableEntry {
         return new MetadataTableEntry(namespace, idExtractor, translationStrategy, externalEntries);
     }
 
-    static ExternalMetadataTableEntry externalOf(Class<?> classType, String namespace, String idRetrievalMethod) {
-        return new ExternalMetadataTableEntry(classType, namespace, idRetrievalMethod);
+    static ExternalMetadataTableEntry externalOf(Class<?> classType, String namespace, String idRetrievalMethod,
+                                                 ExternalMetadataTableEntry.ExternalType type) {
+        return new ExternalMetadataTableEntry(classType, namespace, idRetrievalMethod, type);
     }
 }

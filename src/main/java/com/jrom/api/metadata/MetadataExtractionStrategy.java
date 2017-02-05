@@ -2,7 +2,6 @@ package com.jrom.api.metadata;
 
 import com.jrom.impl.metadata.AnnotationMetadataExtractionStrategy;
 import com.jrom.impl.metadata.MetadataTableEntry;
-import com.jrom.impl.metadata.ParallelMetadataExtractionDecorator;
 
 import java.util.List;
 import java.util.Map;
@@ -28,10 +27,6 @@ public interface MetadataExtractionStrategy {
      * @return
      */
     static MetadataExtractionStrategy of(boolean parallel) {
-        if (parallel) {
-            return new ParallelMetadataExtractionDecorator(new AnnotationMetadataExtractionStrategy());
-        } else {
-            return new AnnotationMetadataExtractionStrategy();
-        }
+        return new AnnotationMetadataExtractionStrategy();
     }
 }
