@@ -32,8 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.jrom.impl.metadata.MetadataTableEntry.ExternalMetadataTableEntry.ExternalType;
-import static com.jrom.impl.metadata.MetadataTableEntry.externalOf;
+import static com.jrom.impl.metadata.ExternalMetadataTableEntry.ofGeneric;
 
 /**
  * Metadata extraction from annotations
@@ -74,7 +73,7 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
                 addExcludedFields(builder);
 
                 // Handle external fields metadata
-                Map<String, MetadataTableEntry.ExternalMetadataTableEntry> externalEntries = addExternalTypeAdapters(classEntry);
+                Map<String, ExternalMetadataTableEntry> externalEntries = addExternalTypeAdapters(classEntry);
                 addExternalFieldAdaptors(externalEntries, builder);
 
                 MetadataTableEntry newEntry = MetadataTableEntry.of(
@@ -95,7 +94,7 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
         return Optional.ofNullable(idProvider);
     }
 
-    private Map<String, MetadataTableEntry.ExternalMetadataTableEntry> addExternalTypeAdapters(Class<?> classEntry) {
+    private Map<String, ExternalMetadataTableEntry> addExternalTypeAdapters(Class<?> classEntry) {
         Stream<Field> allFields = Stream.of(classEntry.getDeclaredFields());
 
         //get all fields from all superclasses
@@ -105,27 +104,24 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
             superClass = superClass.getSuperclass();
         }
 
-        Map<String, MetadataTableEntry.ExternalMetadataTableEntry> externalEntries = allFields
+        Map<String, ExternalMetadataTableEntry> externalEntries = allFields
                 .filter(e -> e.isAnnotationPresent(Standalone.class))
                 .collect(Collectors.toMap(Field::getName, e -> {
-                            Standalone standaloneAnnotation = e.getAnnotation(Standalone.class);
-                            String externalNamespace = standaloneAnnotation.externalNamespace();
-                            String idMethodName = standaloneAnnotation.idMethodProvider();
-                            ExternalType type;
-
-                            Class<?> fieldClass = e.getType();
-                            if (Map.class.isAssignableFrom(fieldClass)) {
-                                type = ExternalType.MAP;
-                            } else if (fieldClass.isAssignableFrom(List.class)) {
-                                type = ExternalType.LIST;
-                            } else if (Set.class.isAssignableFrom(fieldClass)) {
-                                type = ExternalType.SET;
-                            } else {
-                                type = ExternalType.SIMPLE;
-                            }
-
-                            return externalOf(e.getType(), externalNamespace, idMethodName, type);
-                        }));
+                    Standalone standaloneAnnotation = e.getAnnotation(Standalone.class);
+                    String externalNamespace = standaloneAnnotation.externalNamespace();
+                    String idMethodName = standaloneAnnotation.idMethodProvider();
+                    //TODO fix these
+                    Class<?> fieldClass = e.getType();
+                    if (Map.class.isAssignableFrom(fieldClass)) {
+                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SIMPLE, fieldClass,idMethodName);
+                    } else if (fieldClass.isAssignableFrom(List.class)) {
+                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SIMPLE, fieldClass,idMethodName);
+                    } else if (Set.class.isAssignableFrom(fieldClass)) {
+                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SIMPLE, fieldClass,idMethodName);
+                    } else {
+                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SIMPLE, fieldClass,idMethodName);
+                    }
+                }));
 
         return externalEntries;
     }
@@ -216,41 +212,44 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
         });
     }
 
-    private void addExternalFieldAdaptors(Map<String, MetadataTableEntry.ExternalMetadataTableEntry> externalEntries, GsonBuilder builder) {
-        externalEntries.forEach((k,v) -> {
-            builder.registerTypeAdapter(v.getClassType(), new TypeAdapter<Object>() {
+    private void addExternalFieldAdaptors(Map<String, ExternalMetadataTableEntry> externalEntries, GsonBuilder builder) {
+        externalEntries.forEach((k, v) -> {
+            if (ExternalMetadataTableEntry.ExternalEntryType.SIMPLE.equals(v.getExternalEntryType())) {
+                ExternalMetadataTableEntry.GenericExternalMetadataTableEntry value = (ExternalMetadataTableEntry.GenericExternalMetadataTableEntry) v;
+                String idRetrievalMethod = value.getIdRetrievalMethod();
 
-                @Override
-                public void write(JsonWriter out, Object value) throws IOException {
-                    out.beginObject();
-                    //TODO stop being dependent on that: it's there anyway
-//                    out.name(EXTERNAL_OBJECT_FIELD_NAME).value(k);
-                    try {
-                        if (value != null) {
-                            String id = String.valueOf(value.getClass().getMethod(v.idRetrievalMethod).invoke(value));
-                            out.name(EXTERNAL_OBJECT_ID).value(id);
-                        } else {
-                            out.name(EXTERNAL_OBJECT_ID).value(JSONTranslationStrategy.NULL_EXTERNAL_OBJECT_ID);
+                builder.registerTypeAdapter(value.getClassType(), new TypeAdapter<Object>() {
+
+                    @Override
+                    public void write(JsonWriter out, Object value) throws IOException {
+                        out.beginObject();
+                        try {
+                            if (value != null) {
+                                String id = String.valueOf(value.getClass().getMethod(idRetrievalMethod).invoke(value));
+                                out.name(EXTERNAL_OBJECT_ID).value(id);
+                            } else {
+                                out.name(EXTERNAL_OBJECT_ID).value(JSONTranslationStrategy.NULL_EXTERNAL_OBJECT_ID);
+                            }
+                        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                            throw new JROMCRUDException("Unable to serialise/deserialise as no method: " + idRetrievalMethod
+                                    + " on object of type: " + v.getClass(), e);
                         }
-                    } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                        throw new JROMCRUDException("Unable to serialise/deserialise as no method: " + v.idRetrievalMethod
-                                + " on object of type: " + v.getClass(), e);
+                        out.endObject();
                     }
-                    out.endObject();
-                }
 
-                @Override
-                public Object read(JsonReader in) throws IOException {
-                    //always returns null, setting externals will take place after main object si retrieved
-                    in.beginObject();
-                    while (in.peek() == JsonToken.NAME){
-                        in.nextName();
-                        in.nextString();
+                    @Override
+                    public Object read(JsonReader in) throws IOException {
+                        //always returns null, setting externals will take place after main object si retrieved
+                        in.beginObject();
+                        while (in.peek() == JsonToken.NAME) {
+                            in.nextName();
+                            in.nextString();
+                        }
+                        in.endObject();
+                        return null;
                     }
-                    in.endObject();
-                    return null;
-                }
-            });
+                });
+            }
         });
     }
 }

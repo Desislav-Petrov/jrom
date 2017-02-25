@@ -50,48 +50,9 @@ public class MetadataTableEntry {
                 '}';
     }
 
-    public static class ExternalMetadataTableEntry {
-        final Class<?> classType;
-        final String namespace;
-        final String idRetrievalMethod;
-        final ExternalType type;
-
-        public enum ExternalType {
-            SIMPLE, SET, MAP, LIST
-        }
-
-        private ExternalMetadataTableEntry(Class<?> classType, String namespace, String idRetrievalMethod, ExternalType type) {
-            this.classType = classType;
-            this.namespace = namespace;
-            this.idRetrievalMethod = idRetrievalMethod;
-            this.type = type;
-        }
-
-        public Class<?> getClassType() {
-            return classType;
-        }
-
-        public String getNamespace() {
-            return namespace;
-        }
-
-        public String getIdRetrievalMethod() {
-            return idRetrievalMethod;
-        }
-
-        public ExternalType getType() {
-            return type;
-        }
-    }
-
     //static creators
     static MetadataTableEntry of(String namespace, Function<Object, String> idExtractor, JSONTranslationStrategy translationStrategy,
                                  Map<String, ExternalMetadataTableEntry> externalEntries) {
         return new MetadataTableEntry(namespace, idExtractor, translationStrategy, externalEntries);
-    }
-
-    static ExternalMetadataTableEntry externalOf(Class<?> classType, String namespace, String idRetrievalMethod,
-                                                 ExternalMetadataTableEntry.ExternalType type) {
-        return new ExternalMetadataTableEntry(classType, namespace, idRetrievalMethod, type);
     }
 }
