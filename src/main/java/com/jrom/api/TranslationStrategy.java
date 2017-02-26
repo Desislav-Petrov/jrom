@@ -1,7 +1,13 @@
 package com.jrom.api;
 
+import com.jrom.api.exception.JROMTranslationException;
+import com.jrom.impl.metadata.ExternalMetadataTableEntry;
+import com.jrom.impl.metadata.MetadataTableEntry;
 import org.apache.commons.lang3.tuple.Pair;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Pipeline;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,10 +17,11 @@ import java.util.Optional;
  * @author des
  */
 public interface TranslationStrategy {
+
     /**
      * TranslationStrategy types
      */
-    public enum TranslationStrategyType {
+    enum TranslationStrategyType {
         JSON
     }
 
@@ -36,15 +43,6 @@ public interface TranslationStrategy {
     <T> T deserialiseStandalone(String externalObjectAsString, Class<T> classType);
 
     /**
-     * Serialises a standalone object
-     *
-     * @param object
-     * @param <T>
-     * @return
-     */
-    <T> String serialiseStandalone(T object);
-
-    /**
      * Retrieve an object from string
      *
      * @param <T>
@@ -53,6 +51,29 @@ public interface TranslationStrategy {
      * @return the object without the externals and the list of external entries to be resolved later
      */
     <T> Optional<Pair<T, List<ExternalEntry>>> deserialise(String objectString, Class<T> classType);
+
+    /**
+     * Serialises a standalone entity
+     *
+     * @param entry
+     * @param externalObject
+     * @param currentPipeline
+     * @throws NoSuchMethodException
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     */
+    void serialiseStandalone(ExternalMetadataTableEntry entry, Object externalObject, Pipeline currentPipeline)
+            throws JROMTranslationException;
+
+    /**
+     * Deserialises a standalone entity
+     *
+     * @param e
+     * @param entry
+     * @param jedis
+     * @return
+     */
+    Object deserialiseStandaloneV2(ExternalEntry e, MetadataTableEntry entry, Jedis jedis);
 
     /**
      * Encapsulates an external entry

@@ -1,10 +1,10 @@
 package com.jrom.impl;
 
 import com.jrom.api.Session;
-import com.jrom.api.StandaloneWriteStrategy;
 import com.jrom.api.TranslationStrategy;
 import com.jrom.api.exception.JROMCRUDException;
 import com.jrom.api.exception.JROMTransactionException;
+import com.jrom.api.exception.JROMTranslationException;
 import com.jrom.api.metadata.MetadataTable;
 import com.jrom.impl.metadata.ExternalMetadataTableEntry;
 import com.jrom.impl.metadata.MetadataTableEntry;
@@ -38,7 +38,6 @@ public class StatelessRedisSession implements Session {
 
     private Pipeline currentPipeline;
     private Jedis currentJedis;
-    private StandaloneWriteStrategy standaloneWriteStrategy;
 
     StatelessRedisSession(JedisPool pool, MetadataTable table) {
         this.pool = pool;
@@ -90,7 +89,7 @@ public class StatelessRedisSession implements Session {
                 T object = deserialisedObject.get().getLeft();
                 List<TranslationStrategy.ExternalEntry> externalEntries = deserialisedObject.get().getRight();
                 if (externalEntries != null && !externalEntries.isEmpty()) {
-                    readStandalone(jedis, object, externalEntries);
+                    readStandalone(jedis, object, externalEntries, entry.getTranslationStrategy());
                 }
                 return Optional.of(object);
             } else {
@@ -103,12 +102,11 @@ public class StatelessRedisSession implements Session {
         }
     }
 
-    private <T> void readStandalone(Jedis jedis, T object, List<TranslationStrategy.ExternalEntry> externalEntries) {
+    private <T> void readStandalone(Jedis jedis, T object, List<TranslationStrategy.ExternalEntry> externalEntries, TranslationStrategy translationStrategy) {
         externalEntries.forEach(e -> {
             MetadataTableEntry entry = verifyEntry(object);
             String fieldName = e.getFieldName();
-            standaloneWriteStrategy = StandaloneWriteStrategy.getStandaloneWriteStrategy(entry.getExternalEntries().get(fieldName).getExternalEntryType());
-            Object externalObject = standaloneWriteStrategy.readSimple(e, entry, jedis);
+            Object externalObject = translationStrategy.deserialiseStandaloneV2(e, entry, jedis);
             try {
                 Method descriptor = new PropertyDescriptor(fieldName, object.getClass()).getWriteMethod();
                 descriptor.invoke(object, externalObject);
@@ -142,7 +140,7 @@ public class StatelessRedisSession implements Session {
                         .forEach( e -> {
                             entries.add(e.getKey());
                             if (e.getValue() != null && !e.getValue().isEmpty()) {
-                                readStandalone(jedis, e.getKey(), e.getValue());
+                                readStandalone(jedis, e.getKey(), e.getValue(), entry.getTranslationStrategy());
                             }
                         });
 
@@ -271,14 +269,12 @@ public class StatelessRedisSession implements Session {
 
         if (externalObject != null) {
             try {
-                standaloneWriteStrategy = StandaloneWriteStrategy.getStandaloneWriteStrategy(entry.getExternalEntryType());
-                standaloneWriteStrategy.writeSimple(entry, translationStrategy, externalObject, currentPipeline);
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                translationStrategy.serialiseStandalone(entry, externalObject, currentPipeline);
+            } catch (JROMTranslationException e) {
                 LOGGER.error("Unable to retrieve id fo external object from field [{}]", fieldName, e);
                 throw new JROMCRUDException(
                         "Error when retrieving id of external object of type: " + object.getClass(), e);
             }
         }
     }
-
 }
