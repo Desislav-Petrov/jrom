@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -110,15 +111,20 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
                     Standalone standaloneAnnotation = e.getAnnotation(Standalone.class);
                     String externalNamespace = standaloneAnnotation.externalNamespace();
                     String idMethodName = standaloneAnnotation.idMethodProvider();
-                    //TODO fix these
+
                     Class<?> fieldClass = e.getType();
                     if (Map.class.isAssignableFrom(fieldClass)) {
                         return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SIMPLE, fieldClass,idMethodName);
                     } else if (fieldClass.isAssignableFrom(List.class)) {
-                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SIMPLE, fieldClass,idMethodName);
+                        ParameterizedType stringListType = (ParameterizedType) e.getGenericType();
+                        Class<?> entryClass  = (Class<?>) stringListType.getActualTypeArguments()[0];
+                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.LIST, entryClass, idMethodName);
                     } else if (Set.class.isAssignableFrom(fieldClass)) {
-                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SIMPLE, fieldClass,idMethodName);
+                        ParameterizedType stringListType = (ParameterizedType) e.getGenericType();
+                        Class<?> entryClass  = (Class<?>) stringListType.getActualTypeArguments()[0];
+                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SET, entryClass, idMethodName);
                     } else {
+                        //TODO fix
                         return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SIMPLE, fieldClass,idMethodName);
                     }
                 }));

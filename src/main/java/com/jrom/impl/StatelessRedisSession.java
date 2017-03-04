@@ -106,7 +106,7 @@ public class StatelessRedisSession implements Session {
         externalEntries.forEach(e -> {
             MetadataTableEntry entry = verifyEntry(object);
             String fieldName = e.getFieldName();
-            Object externalObject = translationStrategy.deserialiseStandaloneV2(e, entry, jedis);
+            Object externalObject = translationStrategy.deserialiseStandalone(e, entry, jedis);
             try {
                 Method descriptor = new PropertyDescriptor(fieldName, object.getClass()).getWriteMethod();
                 descriptor.invoke(object, externalObject);

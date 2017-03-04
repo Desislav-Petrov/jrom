@@ -1,4 +1,4 @@
-package com.jrom.testdomain.good1;
+package com.jrom.testdomain.external;
 
 import com.jrom.api.annotation.Id;
 import com.jrom.api.annotation.RedisAware;
@@ -10,9 +10,9 @@ import java.util.*;
  * Created by des on 2/5/17.
  */
 @RedisAware(namespace = "sampleclasstest")
-public class SampleClassWithExternalSet {
+public class SampleClassWithNativeStandaloneStructures {
     @Id
-    private int id;
+    private String id;
     @Standalone(externalNamespace = "testSet", idMethodProvider = "toString")
     private Set<String> setValues = new HashSet<>();
     @Standalone(externalNamespace = "testList", idMethodProvider = "toString")
@@ -44,11 +44,33 @@ public class SampleClassWithExternalSet {
         this.setValues = setValues;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SampleClassWithNativeStandaloneStructures that = (SampleClassWithNativeStandaloneStructures) o;
+
+        if (!id.equals(that.id)) return false;
+        if (setValues != null ? !setValues.equals(that.setValues) : that.setValues != null) return false;
+        if (listValues != null ? !listValues.equals(that.listValues) : that.listValues != null) return false;
+        return mapValues != null ? mapValues.equals(that.mapValues) : that.mapValues == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id.hashCode();
+        result = 31 * result + (setValues != null ? setValues.hashCode() : 0);
+        result = 31 * result + (listValues != null ? listValues.hashCode() : 0);
+        result = 31 * result + (mapValues != null ? mapValues.hashCode() : 0);
+        return result;
     }
 }

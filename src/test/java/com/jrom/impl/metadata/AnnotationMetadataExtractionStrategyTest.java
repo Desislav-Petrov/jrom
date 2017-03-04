@@ -3,6 +3,7 @@ package com.jrom.impl.metadata;
 import com.jrom.api.exception.JROMException;
 import com.jrom.api.exception.JROMMetadataException;
 import com.jrom.testdomain.broken1.MissingGetterSampleDomainClass;
+import com.jrom.testdomain.external.SampleClassWithNativeStandaloneStructures;
 import com.jrom.testdomain.good1.SampleDomainClass;
 import com.jrom.testdomain.good1.SampleDomainClassWithMethodId;
 import com.jrom.testdomain.good1.SampleDomainSubclass;
@@ -11,8 +12,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+
+import static com.jrom.impl.metadata.ExternalMetadataTableEntry.ExternalEntryType;
 
 
 /**
@@ -21,14 +25,14 @@ import java.util.Map;
 public class AnnotationMetadataExtractionStrategyTest {
     private AnnotationMetadataExtractionStrategy extractionStrategy;
 
-    private static final int NUMBER_OF_CLASSES_IN_PACKAGE = 6;
+    private static final int NUMBER_OF_CLASSES_IN_PACKAGE = 7;
     private Map<Class<?>, MetadataTableEntry> metadata;
 
     @Before
     @SuppressWarnings("unchecked")
     public void setup() {
         extractionStrategy = new AnnotationMetadataExtractionStrategy();
-        metadata = extractionStrategy.extract(Collections.singletonList("com.jrom.testdomain.good1"));
+        metadata = extractionStrategy.extract(Arrays.asList("com.jrom.testdomain.good1", "com.jrom.testdomain.external"));
     }
 
     @Test
@@ -109,14 +113,14 @@ public class AnnotationMetadataExtractionStrategyTest {
         Assert.assertEquals("someId", entry.getIdExtractor().apply(sample));
     }
 
-   /* @Test
+    @Test
     public void externalOfTypeSetPresentTest() {
         Assert.assertEquals(NUMBER_OF_CLASSES_IN_PACKAGE, metadata.size());
-        MetadataTableEntry entry = metadata.get(SampleClassWithExternalSet.class);
+        MetadataTableEntry entry = metadata.get(SampleClassWithNativeStandaloneStructures.class);
 
         Assert.assertEquals(3, entry.getExternalEntries().size());
-        Assert.assertEquals(ExternalType.SET, entry.getExternalEntries().get("setValues").getType());
-        Assert.assertEquals(ExternalType.MAP, entry.getExternalEntries().get("mapValues").getType());
-        Assert.assertEquals(ExternalType.LIST, entry.getExternalEntries().get("listValues").getType());
-    }*/
+        Assert.assertEquals(ExternalEntryType.SET, entry.getExternalEntries().get("setValues").getExternalEntryType());
+//        Assert.assertEquals(ExternalEntryType.MAP, entry.getExternalEntries().get("mapValues").getExternalEntryType());
+        Assert.assertEquals(ExternalEntryType.LIST, entry.getExternalEntries().get("listValues").getExternalEntryType());
+    }
 }

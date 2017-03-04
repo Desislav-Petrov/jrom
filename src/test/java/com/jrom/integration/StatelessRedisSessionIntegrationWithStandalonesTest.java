@@ -1,5 +1,6 @@
 package com.jrom.integration;
 
+import com.jrom.testdomain.external.SampleClassWithNativeStandaloneStructures;
 import com.jrom.testdomain.external.SampleDomainClass;
 import com.jrom.util.ExternalDomainClass;
 import org.junit.Assert;
@@ -47,7 +48,7 @@ public class StatelessRedisSessionIntegrationWithStandalonesTest extends Statele
     }
 
     @Test
-    public void persistAndReadTwoStandalones() {
+    public void persistAndReadTwoStandalonesTest() {
         SampleDomainClass domainClass = new SampleDomainClass();
         domainClass.setSomeIntValue(0);
         final String testid = "testid";
@@ -75,5 +76,26 @@ public class StatelessRedisSessionIntegrationWithStandalonesTest extends Statele
         Assert.assertEquals(domainClass, retrievedWithSingleId.get());
         Assert.assertEquals(domainClass, retrievedWithListOfIds.get().get(0));
         Assert.assertEquals(domainClass, retrieveAllEntries.get().get(0));
+    }
+
+    @Test
+    public void persistAndReadStandaloneWithListTest() {
+        SampleClassWithNativeStandaloneStructures classWithStandalone = new SampleClassWithNativeStandaloneStructures();
+        classWithStandalone.setId("1");
+        classWithStandalone.setListValues(Arrays.asList("Test1", "Test2"));
+        classWithStandalone.setSetValues(new HashSet<>(Arrays.asList("Test3", "Test4")));
+
+        currentSession = factory.getSession();
+        currentSession.openTransaction();
+        currentSession.persist(classWithStandalone);
+        currentSession.commitTransaction();
+
+        Optional<SampleClassWithNativeStandaloneStructures> result = currentSession.read("1", SampleClassWithNativeStandaloneStructures.class);
+
+        Assert.assertNotNull(result.get());
+        SampleClassWithNativeStandaloneStructures retrievedObject = result.get();
+        Assert.assertEquals(classWithStandalone.getId(), retrievedObject.getId());
+        Assert.assertEquals(classWithStandalone.getListValues(), retrievedObject.getListValues());
+        Assert.assertEquals(classWithStandalone.getSetValues(), retrievedObject.getSetValues());
     }
 }

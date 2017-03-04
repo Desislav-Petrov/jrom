@@ -33,16 +33,6 @@ public interface TranslationStrategy {
     String serialise(Object object);
 
     /**
-     * Deserialises a standalone object
-     *
-     * @param externalObjectAsString
-     * @param classType
-     * @param <T>
-     * @return
-     */
-    <T> T deserialiseStandalone(String externalObjectAsString, Class<T> classType);
-
-    /**
      * Retrieve an object from string
      *
      * @param <T>
@@ -73,7 +63,7 @@ public interface TranslationStrategy {
      * @param jedis
      * @return
      */
-    Object deserialiseStandaloneV2(ExternalEntry e, MetadataTableEntry entry, Jedis jedis);
+    Object deserialiseStandalone(ExternalEntry e, MetadataTableEntry entry, Jedis jedis);
 
     /**
      * Encapsulates an external entry

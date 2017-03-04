@@ -63,5 +63,9 @@ public abstract class StatelessRedisSessionIntegrationTest {
         }
     }
 
+    protected Jedis getJedis() {
+        return simplePool.getResource();
+    }
+
     protected abstract String getPackagesToScan();
 }
