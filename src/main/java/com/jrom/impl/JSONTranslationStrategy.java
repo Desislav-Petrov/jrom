@@ -59,9 +59,7 @@ public class JSONTranslationStrategy implements TranslationStrategy {
             case LIST:
                 List<?> externalList = (List<?>) externalObject;
                 currentPipeline.del(entry.getNamespace());
-                externalList.forEach(e -> {
-                    currentPipeline.lpush(entry.getNamespace(), getObjectId(e, genericEntry));
-                });
+                externalList.forEach(e -> currentPipeline.lpush(entry.getNamespace(), BASE_GSON.toJson(e)));
                 break;
 
             case MAP:
@@ -70,9 +68,7 @@ public class JSONTranslationStrategy implements TranslationStrategy {
             case SET:
                 Set<?> externalSet = (Set<?>) externalObject;
                 currentPipeline.del(entry.getNamespace());
-                externalSet.forEach(e -> {
-                    currentPipeline.sadd(entry.getNamespace(), getObjectId(e, genericEntry));
-                });
+                externalSet.forEach(e -> currentPipeline.sadd(entry.getNamespace(), BASE_GSON.toJson(e)));
                 break;
 
             default:

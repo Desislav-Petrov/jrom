@@ -32,24 +32,24 @@ public class AnnotationMetadataExtractionStrategyTest {
     @SuppressWarnings("unchecked")
     public void setup() {
         extractionStrategy = new AnnotationMetadataExtractionStrategy();
-        metadata = extractionStrategy.extract(Arrays.asList("com.jrom.testdomain.good1", "com.jrom.testdomain.external"));
+        metadata = extractionStrategy.extractMetadata(Arrays.asList("com.jrom.testdomain.good1", "com.jrom.testdomain.external"));
     }
 
     @Test
     @SuppressWarnings("unchecked")
     public void noRedisAnnotatedClassesDoesntAddTest() {
-        metadata = extractionStrategy.extract(Collections.emptyList());
+        metadata = extractionStrategy.extractMetadata(Collections.emptyList());
         Assert.assertEquals(0, metadata.size());
     }
 
     @Test(expected = JROMMetadataException.class)
     public void missingIdOnRedisAwareGivesExTest() {
-        extractionStrategy.extract(Collections.singletonList("com.jrom.testdomain.broken"));
+        extractionStrategy.extractMetadata(Collections.singletonList("com.jrom.testdomain.broken"));
     }
 
     @Test(expected = JROMException.class)
     public void idPresentButNoGetterGivesExTest() {
-        metadata = extractionStrategy.extract(Collections.singletonList("com.jrom.testdomain.broken1"));
+        metadata = extractionStrategy.extractMetadata(Collections.singletonList("com.jrom.testdomain.broken1"));
         Assert.assertEquals(1, metadata.size());
 
         MetadataTableEntry entry = metadata.get(MissingGetterSampleDomainClass.class);

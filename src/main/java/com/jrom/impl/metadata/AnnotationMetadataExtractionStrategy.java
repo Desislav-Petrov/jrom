@@ -43,7 +43,6 @@ import static com.jrom.impl.metadata.ExternalMetadataTableEntry.ofGeneric;
 public class AnnotationMetadataExtractionStrategy implements MetadataExtractionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(AnnotationMetadataExtractionStrategy.class);
 
-    private static final String EXTERNAL_OBJECT_FIELD_NAME = "fieldName";
     public static final String EXTERNAL_OBJECT_ID = "jromExternalObjectId";
 
     public AnnotationMetadataExtractionStrategy() {
@@ -51,7 +50,7 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
     }
 
     @Override
-    public Map<Class<?>, MetadataTableEntry> extract(List<String> packagesToScan) {
+    public Map<Class<?>, MetadataTableEntry> extractMetadata(List<String> packagesToScan) {
         Map<Class<?>, MetadataTableEntry> entries = new ConcurrentHashMap<>();
 
         for (String packageToScan : packagesToScan) {

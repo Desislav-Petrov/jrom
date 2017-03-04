@@ -18,7 +18,7 @@ public interface MetadataExtractionStrategy {
      * @param packagesToScan
      * @return
      */
-    Map<Class<?>, MetadataTableEntry> extract(List<String> packagesToScan);
+    Map<Class<?>, MetadataTableEntry> extractMetadata(List<String> packagesToScan);
 
     /**
      * Factory method to supply strategies

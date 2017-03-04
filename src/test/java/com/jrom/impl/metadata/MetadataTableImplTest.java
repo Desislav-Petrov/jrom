@@ -24,7 +24,7 @@ public class MetadataTableImplTest {
     public void namespaceIsCorrectlyIdentifiedTest() {
         Map<Class<?>, MetadataTableEntry> metadataTableEntries = new HashMap<>();
         metadataTableEntries.put(String.class, MetadataTableEntry.of("test", null, null, null));
-        Mockito.when(strategyMock.extract(Arrays.asList(TESTSCAN1, TESTSCAN2)))
+        Mockito.when(strategyMock.extractMetadata(Arrays.asList(TESTSCAN1, TESTSCAN2)))
                 .thenReturn(metadataTableEntries);
 
         metadataTable.populate();
@@ -45,7 +45,7 @@ public class MetadataTableImplTest {
         Map<Class<?>, MetadataTableEntry> metadataTableEntries = new HashMap<>();
         metadataTableEntries.put(String.class, MetadataTableEntry.of(null, null, null, null));
         metadataTableEntries.put(Integer.class, MetadataTableEntry.of(null, null, null, null));
-        Mockito.when(strategyMock.extract(Arrays.asList(TESTSCAN1, TESTSCAN2)))
+        Mockito.when(strategyMock.extractMetadata(Arrays.asList(TESTSCAN1, TESTSCAN2)))
                 .thenReturn(metadataTableEntries);
 
         metadataTable.populate();

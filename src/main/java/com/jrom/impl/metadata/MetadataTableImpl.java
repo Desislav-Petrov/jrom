@@ -34,7 +34,7 @@ public class MetadataTableImpl implements MetadataTable {
 
     @Override
     public void populate() {
-        this.metadataTable = extractionStrategy.extract(packagesToScan);
+        this.metadataTable = extractionStrategy.extractMetadata(packagesToScan);
     }
 
     @Override

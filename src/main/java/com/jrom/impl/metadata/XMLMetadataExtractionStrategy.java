@@ -12,7 +12,7 @@ import java.util.Map;
  */
 public class XMLMetadataExtractionStrategy implements MetadataExtractionStrategy {
     @Override
-    public Map<Class<?>, MetadataTableEntry> extract(List<String> packagesToScan) {
+    public Map<Class<?>, MetadataTableEntry> extractMetadata(List<String> packagesToScan) {
         //TBD
         return null;
     }
