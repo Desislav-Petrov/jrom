@@ -9,7 +9,7 @@ import java.util.*;
 /**
  * Created by des on 2/5/17.
  */
-@RedisAware(namespace = "sampleclasstest")
+@RedisAware(namespace = "sampleclassexternaltest")
 public class SampleClassWithNativeStandaloneStructures {
     @Id
     private String id;

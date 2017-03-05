@@ -84,6 +84,9 @@ public class StatelessRedisSessionIntegrationWithStandalonesTest extends Statele
         classWithStandalone.setId("1");
         classWithStandalone.setListValues(Arrays.asList("Test1", "Test2"));
         classWithStandalone.setSetValues(new HashSet<>(Arrays.asList("Test3", "Test4")));
+        Map<String, String> testMap = new HashMap<>();
+        testMap.put("someTest", "someTestValue");
+        classWithStandalone.setMapValues(testMap);
 
         currentSession = factory.getSession();
         currentSession.openTransaction();
@@ -97,5 +100,6 @@ public class StatelessRedisSessionIntegrationWithStandalonesTest extends Statele
         Assert.assertEquals(classWithStandalone.getId(), retrievedObject.getId());
         Assert.assertEquals(classWithStandalone.getListValues(), retrievedObject.getListValues());
         Assert.assertEquals(classWithStandalone.getSetValues(), retrievedObject.getSetValues());
+        Assert.assertEquals(classWithStandalone.getMapValues(), retrievedObject.getMapValues());
     }
 }

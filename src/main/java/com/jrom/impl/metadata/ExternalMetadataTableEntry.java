@@ -1,11 +1,11 @@
 package com.jrom.impl.metadata;
 
 /**
- * Created by des on 2/25/17.
+ * Encapsulates metadata about an external object needed for translation
  */
 public abstract class ExternalMetadataTableEntry {
     public enum ExternalEntryType {
-        MAP, LIST, SET, SIMPLE
+        MAP, LIST, SET, SINGLE
     }
 
     final String namespace;
@@ -24,51 +24,37 @@ public abstract class ExternalMetadataTableEntry {
         return namespace;
     }
 
+    /**
+     * Encapsulates information about a map
+     */
     public static class MapExternalMetadataTableEntry extends ExternalMetadataTableEntry {
-        final Class<?> keyType;
-        final String keyIdRetrievalMethod;
-        final Class<?> valueType;
-        final String valueIdRetrievalMethod;
+        private final Class<?> keyType;
+        private final Class<?> valueType;
 
-        public MapExternalMetadataTableEntry(String namespace, Class<?> keyType, String keyIdRetrievalMethod,
-                                             Class<?> valueType, String valueIdRetrievalMethod) {
+        private MapExternalMetadataTableEntry(String namespace, Class<?> keyType, Class<?> valueType) {
             super(namespace, ExternalEntryType.MAP);
             this.keyType = keyType;
-            this.keyIdRetrievalMethod = keyIdRetrievalMethod;
             this.valueType = valueType;
-            this.valueIdRetrievalMethod = valueIdRetrievalMethod;
         }
 
         public Class<?> getKeyType() {
             return keyType;
         }
 
-        public String getKeyIdRetrievalMethod() {
-            return keyIdRetrievalMethod;
-        }
-
         public Class<?> getValueType() {
             return valueType;
         }
-
-        public String getValueIdRetrievalMethod() {
-            return valueIdRetrievalMethod;
-        }
     }
 
-    public static class GenericExternalMetadataTableEntry extends ExternalMetadataTableEntry {
-        final Class<?> entryType;
-        final String idRetrievalMethod;
+    /**
+     * Encapsulates information about a list or a set
+     */
+    public static class SetOrListExternalMetadataTableEntry extends ExternalMetadataTableEntry {
+        private final Class<?> entryType;
 
-        public GenericExternalMetadataTableEntry(String namespace, Class<?> entryType, ExternalEntryType externalEntryType,
-                                                 String idRetrievalMethod) {
-            super(namespace, externalEntryType);
+        private SetOrListExternalMetadataTableEntry(String namespace, ExternalEntryType type, Class<?> entryType) {
+            super(namespace, type);
             this.entryType = entryType;
-            this.idRetrievalMethod = idRetrievalMethod;
-        }
-
-        public String getIdRetrievalMethod() {
-            return idRetrievalMethod;
         }
 
         public Class<?> getClassType() {
@@ -76,8 +62,53 @@ public abstract class ExternalMetadataTableEntry {
         }
     }
 
-    public static ExternalMetadataTableEntry ofGeneric(String namespace, ExternalEntryType externalEntryType,
-                                                       Class<?> entryType, String idRetreivalMethodId) {
-        return new GenericExternalMetadataTableEntry(namespace, entryType, externalEntryType, idRetreivalMethodId);
+    /**
+     * Encapsulates information about a single object
+     */
+    public static class SingleExternalMetadataTableEntry extends SetOrListExternalMetadataTableEntry {
+        final String idRetrievalMethod;
+
+        private SingleExternalMetadataTableEntry(String namespace, Class<?> entryType, String idRetrievalMethod) {
+            super(namespace, ExternalEntryType.SINGLE, entryType);
+            this.idRetrievalMethod = idRetrievalMethod;
+        }
+
+        public String getIdRetrievalMethod() {
+            return idRetrievalMethod;
+        }
+    }
+
+
+    /**
+     * Static creator for set or list entry
+     * @param namespace
+     * @param type
+     * @param entryType
+     * @return
+     */
+    public static ExternalMetadataTableEntry ofSetOrList(String namespace, ExternalEntryType type, Class<?> entryType) {
+        return new SetOrListExternalMetadataTableEntry(namespace, type, entryType);
+    }
+
+    /**
+     * Static creator for map entry
+     * @param namespace
+     * @param keyType
+     * @param valueType
+     * @return
+     */
+    public static ExternalMetadataTableEntry ofMap(String namespace, Class<?> keyType, Class<?> valueType) {
+        return new MapExternalMetadataTableEntry(namespace, keyType, valueType);
+    }
+
+    /**
+     * Static creator for single entry
+     * @param namespace
+     * @param entryType
+     * @param idRetrieval
+     * @return
+     */
+    public static ExternalMetadataTableEntry ofSingle(String namespace, Class<?> entryType, String idRetrieval) {
+        return new SingleExternalMetadataTableEntry(namespace, entryType, idRetrieval);
     }
 }

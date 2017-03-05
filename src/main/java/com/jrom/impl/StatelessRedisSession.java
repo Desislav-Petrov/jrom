@@ -56,7 +56,8 @@ public class StatelessRedisSession implements Session {
 
         try {
             currentPipeline.hset(entry.getClassNamespace(), objectId, entry.getTranslationStrategy().serialise(object));
-            entry.getExternalEntries().forEach((k,v) -> writeStandalone(object, k, v, entry.getTranslationStrategy()));
+            entry.getExternalEntries().forEach((k,v) ->
+                    writeStandalone(object, k, v, entry.getTranslationStrategy()));
         } catch (Exception ex) {
             LOGGER.error("Error while writing class [{}] to redis: ", className, ex);
             throw new JROMCRUDException("Error while writing class: " + className, ex);
@@ -87,6 +88,7 @@ public class StatelessRedisSession implements Session {
             Optional<Pair<T, List<TranslationStrategy.ExternalEntry>>> deserialisedObject = entry.getTranslationStrategy().deserialise(serialisedObject, classType);
             if (deserialisedObject.isPresent()) {
                 T object = deserialisedObject.get().getLeft();
+                //TODO
                 List<TranslationStrategy.ExternalEntry> externalEntries = deserialisedObject.get().getRight();
                 if (externalEntries != null && !externalEntries.isEmpty()) {
                     readStandalone(jedis, object, externalEntries, entry.getTranslationStrategy());

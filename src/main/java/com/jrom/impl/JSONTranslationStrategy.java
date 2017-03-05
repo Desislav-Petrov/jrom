@@ -19,8 +19,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import static com.jrom.impl.metadata.ExternalMetadataTableEntry.GenericExternalMetadataTableEntry;
+import static com.jrom.impl.metadata.ExternalMetadataTableEntry.SingleExternalMetadataTableEntry;
 
 /**
  * Translation strategy based on JSON
@@ -46,37 +47,47 @@ public class JSONTranslationStrategy implements TranslationStrategy {
     @Override
     public void serialiseStandalone(ExternalMetadataTableEntry entry, Object externalObject, Pipeline currentPipeline)
             throws JROMTranslationException {
-        GenericExternalMetadataTableEntry genericEntry = (GenericExternalMetadataTableEntry) entry;
-        switch (genericEntry.getExternalEntryType()) {
-            case SIMPLE:
+        switch (entry.getExternalEntryType()) {
+            case SINGLE:
+                SingleExternalMetadataTableEntry singleEntry = (SingleExternalMetadataTableEntry) entry;
                 String objectId = null;
-                objectId = getObjectId(externalObject, genericEntry);
+                objectId = getObjectId(externalObject, singleEntry);
                 Map<String, String> idWithValues = new HashMap<>();
                 idWithValues.put(objectId, BASE_GSON.toJson(externalObject));
-                currentPipeline.hmset(genericEntry.getNamespace(), idWithValues);
+                currentPipeline.hmset(singleEntry.getNamespace(), idWithValues);
                 break;
 
             case LIST:
                 List<?> externalList = (List<?>) externalObject;
-                currentPipeline.del(entry.getNamespace());
-                externalList.forEach(e -> currentPipeline.lpush(entry.getNamespace(), BASE_GSON.toJson(e)));
+                if (externalList != null && !externalList.isEmpty()) {
+                    currentPipeline.del(entry.getNamespace());
+                    externalList.forEach(e -> currentPipeline.lpush(entry.getNamespace(), BASE_GSON.toJson(e)));
+                }
                 break;
 
             case MAP:
+                Map<?, ?> externalMap = (Map<?, ?>) externalObject;
+                if (externalMap != null && !externalMap.isEmpty()) {
+                    Map<String, String> serialisedMap = externalMap.entrySet().stream()
+                            .collect(Collectors.toMap(BASE_GSON::toJson, BASE_GSON::toJson));
+                    currentPipeline.hmset(entry.getNamespace(), serialisedMap);
+                }
                 break;
 
             case SET:
                 Set<?> externalSet = (Set<?>) externalObject;
-                currentPipeline.del(entry.getNamespace());
-                externalSet.forEach(e -> currentPipeline.sadd(entry.getNamespace(), BASE_GSON.toJson(e)));
+                if (externalSet != null && !externalSet.isEmpty()) {
+                    currentPipeline.del(entry.getNamespace());
+                    externalSet.forEach(e -> currentPipeline.sadd(entry.getNamespace(), BASE_GSON.toJson(e)));
+                }
                 break;
 
             default:
-                throw new IllegalArgumentException("Unknown external type: " + genericEntry.getExternalEntryType());
+                throw new IllegalArgumentException("Unknown external type: " + entry.getExternalEntryType());
         }
     }
 
-    private String getObjectId(Object externalObject, GenericExternalMetadataTableEntry genericEntry) {
+    private String getObjectId(Object externalObject, SingleExternalMetadataTableEntry genericEntry) {
         try {
             return String.valueOf(externalObject.getClass()
                              .getMethod(genericEntry.getIdRetrievalMethod())
@@ -90,31 +101,41 @@ public class JSONTranslationStrategy implements TranslationStrategy {
     @Override
     public Object deserialiseStandalone(ExternalEntry externalEntry, MetadataTableEntry entry, Jedis jedis) {
         String fieldName = externalEntry.getFieldName();
-        GenericExternalMetadataTableEntry externalFieldMetadata =
-                (GenericExternalMetadataTableEntry) entry.getExternalEntries().get(fieldName);
-        String externalObjectId = externalEntry.getId();
+        ExternalMetadataTableEntry externalFieldMetadata = entry.getExternalEntries().get(fieldName);
+
         switch (externalFieldMetadata.getExternalEntryType()) {
-            case SIMPLE:
+            case SINGLE:
+                SingleExternalMetadataTableEntry singleEntry = (SingleExternalMetadataTableEntry) externalFieldMetadata;
+                String externalObjectId = externalEntry.getId();
                 String externalObjectAsString = jedis.hget(externalFieldMetadata.getNamespace(), externalObjectId);
-                return BASE_GSON.fromJson(externalObjectAsString, externalFieldMetadata.getClassType());
+                return BASE_GSON.fromJson(externalObjectAsString, singleEntry.getClassType());
 
             case LIST:
+                ExternalMetadataTableEntry.SetOrListExternalMetadataTableEntry setOrListEntry =
+                        (ExternalMetadataTableEntry.SetOrListExternalMetadataTableEntry) externalFieldMetadata;
                 List<String> listEntriesFromRedis = jedis.lrange(entry.getClassNamespace(), 0, -1);
                 List<Object> objectList = new ArrayList<>();
-                listEntriesFromRedis.forEach(e -> objectList.add(BASE_GSON.fromJson(e, externalFieldMetadata.getClassType())));
+                listEntriesFromRedis.forEach(e -> objectList.add(BASE_GSON.fromJson(e, setOrListEntry.getClassType())));
                 return objectList;
 
             case MAP:
-                return null;
+                ExternalMetadataTableEntry.MapExternalMetadataTableEntry mapEntry =
+                        (ExternalMetadataTableEntry.MapExternalMetadataTableEntry) externalFieldMetadata;
+                Map<String, String> mapFromRedis = jedis.hgetAll(mapEntry.getNamespace());
+                return mapFromRedis.entrySet()
+                        .stream()
+                        .collect(Collectors
+                        .toMap(k -> BASE_GSON.toJson(k, mapEntry.getKeyType()), v -> BASE_GSON.toJson(v, mapEntry.getValueType())));
 
             case SET:
+                setOrListEntry = (ExternalMetadataTableEntry.SetOrListExternalMetadataTableEntry) externalFieldMetadata;
                 Set<String> setEntriesFromRedis = jedis.smembers(entry.getClassNamespace());
                 Set<Object> objectSet = new HashSet<>();
-                setEntriesFromRedis.forEach(e -> objectSet.add(BASE_GSON.fromJson(e, externalFieldMetadata.getClassType())));
+                setEntriesFromRedis.forEach(e -> objectSet.add(BASE_GSON.fromJson(e, setOrListEntry.getClassType())));
                 return objectSet;
 
             default:
-                throw new IllegalArgumentException("Unknown external type: " + externalFieldMetadata.getExternalEntryType());
+                throw new IllegalArgumentException("Unsupport external type: " + externalFieldMetadata.getExternalEntryType());
         }
     }
 

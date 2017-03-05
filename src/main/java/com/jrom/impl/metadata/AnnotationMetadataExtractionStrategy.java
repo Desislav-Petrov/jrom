@@ -33,7 +33,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.jrom.impl.metadata.ExternalMetadataTableEntry.ofGeneric;
+import static com.jrom.impl.metadata.ExternalMetadataTableEntry.*;
 
 /**
  * Metadata extraction from annotations
@@ -113,18 +113,20 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
 
                     Class<?> fieldClass = e.getType();
                     if (Map.class.isAssignableFrom(fieldClass)) {
-                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SIMPLE, fieldClass,idMethodName);
-                    } else if (fieldClass.isAssignableFrom(List.class)) {
+                        ParameterizedType stringListType = (ParameterizedType) e.getGenericType();
+                        Class<?> keyClass = (Class<?>) stringListType.getActualTypeArguments()[0];
+                        Class<?> valueClass = (Class<?>) stringListType.getActualTypeArguments()[1];
+                        return ofMap(externalNamespace, keyClass, valueClass);
+                    } else if (List.class.isAssignableFrom(fieldClass)) {
                         ParameterizedType stringListType = (ParameterizedType) e.getGenericType();
                         Class<?> entryClass  = (Class<?>) stringListType.getActualTypeArguments()[0];
-                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.LIST, entryClass, idMethodName);
+                        return ofSetOrList(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.LIST, entryClass);
                     } else if (Set.class.isAssignableFrom(fieldClass)) {
                         ParameterizedType stringListType = (ParameterizedType) e.getGenericType();
                         Class<?> entryClass  = (Class<?>) stringListType.getActualTypeArguments()[0];
-                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SET, entryClass, idMethodName);
+                        return ofSetOrList(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SET, entryClass);
                     } else {
-                        //TODO fix
-                        return ofGeneric(externalNamespace, ExternalMetadataTableEntry.ExternalEntryType.SIMPLE, fieldClass,idMethodName);
+                        return ofSingle(externalNamespace, fieldClass, idMethodName);
                     }
                 }));
 
@@ -218,9 +220,10 @@ public class AnnotationMetadataExtractionStrategy implements MetadataExtractionS
     }
 
     private void addExternalFieldAdaptors(Map<String, ExternalMetadataTableEntry> externalEntries, GsonBuilder builder) {
+        //todo lambda
         externalEntries.forEach((k, v) -> {
-            if (ExternalMetadataTableEntry.ExternalEntryType.SIMPLE.equals(v.getExternalEntryType())) {
-                ExternalMetadataTableEntry.GenericExternalMetadataTableEntry value = (ExternalMetadataTableEntry.GenericExternalMetadataTableEntry) v;
+            if (ExternalMetadataTableEntry.ExternalEntryType.SINGLE.equals(v.getExternalEntryType())) {
+                ExternalMetadataTableEntry.SingleExternalMetadataTableEntry value = (ExternalMetadataTableEntry.SingleExternalMetadataTableEntry) v;
                 String idRetrievalMethod = value.getIdRetrievalMethod();
 
                 builder.registerTypeAdapter(value.getClassType(), new TypeAdapter<Object>() {
