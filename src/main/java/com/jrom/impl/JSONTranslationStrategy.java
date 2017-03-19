@@ -68,6 +68,7 @@ public class JSONTranslationStrategy implements TranslationStrategy {
             case MAP:
                 Map<?, ?> externalMap = (Map<?, ?>) externalObject;
                 if (externalMap != null && !externalMap.isEmpty()) {
+                    currentPipeline.del(entry.getNamespace());
                     Map<String, String> serialisedMap = externalMap.entrySet().stream()
                             .collect(Collectors.toMap(BASE_GSON::toJson, BASE_GSON::toJson));
                     currentPipeline.hmset(entry.getNamespace(), serialisedMap);
@@ -135,7 +136,7 @@ public class JSONTranslationStrategy implements TranslationStrategy {
                 return objectSet;
 
             default:
-                throw new IllegalArgumentException("Unsupport external type: " + externalFieldMetadata.getExternalEntryType());
+                throw new IllegalArgumentException("Unknown external type: " + externalFieldMetadata.getExternalEntryType());
         }
     }
 
